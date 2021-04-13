@@ -31,8 +31,9 @@ motor rDrive2(PORT4, ratio18_1, true);
 
 inertial inertialSensor(PORT10);
 
+//In Inches
+const float encoderWheelCircumfrence = 12.5663706144;
 
-const float encoderWheelCircumfrence = 0;
 //Distance from Tracking Centre to Left and Right Encoder Wheels
 const float encoderTrackRadius = 10;  
 
@@ -41,8 +42,6 @@ const float rearEncoderLength = 10;
 
 
 
-int prevXCoord = 0;
-int prevYCoord = 0;
 int prevRotation = 0;
 
 int xCoord = 0;
@@ -134,6 +133,9 @@ void DriveWheels(int forwardAxis, int lateralAxis, int rotalAxis)
   else
       rDrive2.spin(directionType::fwd, r2Speed, velocityUnits::pct);
 }
+
+
+//Calculate XYCoordinate
 void CalculatePosition()
 {
   float lDistChange = (lEncoder.rotation(deg) - previousLEncoder) / 360 * encoderWheelCircumfrence;
@@ -141,10 +143,13 @@ void CalculatePosition()
   float backDistChange = (backEncoder.rotation(deg) - previousBackEncoder) / 360 * encoderWheelCircumfrence;
   float totallDist = lEncoder.rotation(deg) / 360 * encoderWheelCircumfrence;
   float totalrDist = rEncoder.rotation(deg) / 360 * encoderWheelCircumfrence;
+
   currentRotation = (totallDist - totalrDist) / (encoderTrackRadius * 2);
   float angleChange = currentRotation - prevRotation;
+
   float localXOffset = 0;
   float localYOffset = 0;
+  
   if(angleChange == 0)
   {
     localXOffset = backDistChange;
@@ -155,12 +160,20 @@ void CalculatePosition()
     localXOffset = 2 * sin(currentRotation/2) * ((backDistChange / angleChange) + rearEncoderLength);
     localYOffset = 2 * sin(currentRotation/2) * ((rDistChange / angleChange) + encoderTrackRadius);
   }
+
   float averageOrientation = prevRotation + angleChange / 2;
+
   float polarRadius = sqrt(localXOffset * localXOffset + localYOffset * localYOffset);
   float polarTheta = atan(localYOffset / localXOffset);
   polarTheta -= averageOrientation;
+
   xCoord = polarRadius * cos(polarTheta);
   yCoord = polarRadius * sin(polarTheta);
+
+  prevRotation = currentRotation;
+  previousLEncoder = lEncoder.rotation(degrees);
+  previousREncoder = rEncoder.rotation(degrees);
+  previousBackEncoder = backEncoder.rotation(degrees);
 }
 
 void pre_auton(void) {
