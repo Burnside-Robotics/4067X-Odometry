@@ -16,6 +16,7 @@
 // ---- END VEXCODE CONFIGURED DEVICES ----
 
 #include "vex.h"
+#include "Auton.cpp"
 
 using namespace vex;
 
@@ -31,31 +32,6 @@ motor rDrive2(PORT4, ratio18_1, true);
 
 inertial inertialSensor(PORT10);
 
-//In Inches
-const float encoderWheelCircumfrence = 12.5663706144;
-
-//Distance from Tracking Centre to Left and Right Encoder Wheels
-const float encoderTrackRadius = 10;  
-
-//Distance from Tracking Centre to Rear Encoder Wheel
-const float rearEncoderLength = 10;
-
-
-
-
-//Current Coordinates and Rotation
-int xCoord = 0;
-int yCoord = 0;
-int currentRotation = 0;
-
-//Previous Rotatation Values
-int previousLEncoder = 0;
-int previousREncoder = 0;
-int previousBackEncoder = 0;
-int prevRotation = 0; // Rotation of whole robot relative to starting position
-
-
-
 float MOTOR_ACCEL_LIMIT = 10;
 
 int lastl1Speed = 0;
@@ -63,22 +39,15 @@ int lastl2Speed = 0;
 int lastr1Speed = 0;
 int lastr2Speed = 0;
 
-//Convert Degrees to Radians and Vice Versa
-float toRadians(float input)
-{
-  return input / (180 / 3.1415926535);
-}
-float toDegrees(float input)
-{
-  return input * (180 / 3.1415926535);
-}
+
 
 // Adjusts Input by robot heading such that the robot will always drive forward relative to its starting position unless reset
-void AdjustToRotation(int& forwardAxis, int& lateralAxis)
+void AdjustToRotation(float& forwardAxis, float& lateralAxis)
 {
   //Convert Forward and Lateral Axis into Polar Coordinates
-  int polarRadius = sqrt(lateralAxis * lateralAxis + forwardAxis * forwardAxis);
-  float theta = toDegrees((atan(forwardAxis / lateralAxis)));
+  float polarRadius = 0;
+  float theta = 0;
+  toPolar(lateralAxis, forwardAxis, polarRadius, theta);
 
   //Adjust Heading, 270 becomes -90, this is needed for the math to work
   int head = inertialSensor.heading();
@@ -95,8 +64,9 @@ void AdjustToRotation(int& forwardAxis, int& lateralAxis)
   theta += head;
 
   //Convert Polar Coordinates back into Cartesian
-  forwardAxis = polarRadius * sin(toRadians(theta));
-  lateralAxis = polarRadius * cos(toRadians(theta)); 
+  forwardAxis = 0;
+  lateralAxis = 0; 
+  toCartesian(polarRadius, theta, forwardAxis, lateralAxis);
 }
 
 void DriveWheels(int forwardAxis, int lateralAxis, int rotalAxis)
@@ -154,58 +124,6 @@ void DriveWheels(int forwardAxis, int lateralAxis, int rotalAxis)
 }
 
 
-//Calculate XYCoordinates of Robot
-void CalculatePosition()
-{
-  //Calculate how far all encoders ahve traveled since last call
-  float lDistChange = (lEncoder.rotation(deg) - previousLEncoder) / 360 * encoderWheelCircumfrence;
-  float rDistChange = (rEncoder.rotation(deg) - previousREncoder) / 360 * encoderWheelCircumfrence;
-  float backDistChange = (backEncoder.rotation(deg) - previousBackEncoder) / 360 * encoderWheelCircumfrence;
-
-  //Calculate Total Distance Left and Right Encoders have Traveled in Total
-  float totallDist = lEncoder.rotation(deg) / 360 * encoderWheelCircumfrence;
-  float totalrDist = rEncoder.rotation(deg) / 360 * encoderWheelCircumfrence;
-
-  //Calculate the Current Orientation of the Robot
-  currentRotation = (totallDist - totalrDist) / (encoderTrackRadius * 2);
-
-  //Calculate Change in rotation of the robot since last call
-  float angleChange = currentRotation - prevRotation;
-
-  float localXOffset = 0;
-  float localYOffset = 0;
-
-  //If the Robot has not rotated, the X and Y offset since last call are exactly equal to the distance the encoders have Traveled
-  if(angleChange == 0)
-  {
-    localXOffset = backDistChange;
-    localYOffset = rDistChange;
-  }
-  //If the robot has rotated, calculate how much the robot has offset since the last call with trig
-  else
-  {
-    localXOffset = 2 * sin(currentRotation/2) * ((backDistChange / angleChange) + rearEncoderLength);
-    localYOffset = 2 * sin(currentRotation/2) * ((rDistChange / angleChange) + encoderTrackRadius);
-  }
-
-  //Calculate The Average Oreintation of the change in angle since the last call, and the last angle
-  float averageOrientation = prevRotation + angleChange / 2;
-
-  //Convert the Offset Coordinates into Polar
-  float polarRadius = sqrt(localXOffset * localXOffset + localYOffset * localYOffset);
-  float polarTheta = atan(localYOffset / localXOffset);
-  polarTheta -= averageOrientation;
-
-  //Convert Offset Coordinates from Polar to Cartesian and Store as global Coordinates
-  xCoord = polarRadius * cos(polarTheta);
-  yCoord = polarRadius * sin(polarTheta);
-
-  //Store Previous Values
-  prevRotation = currentRotation;
-  previousLEncoder = lEncoder.rotation(degrees);
-  previousREncoder = rEncoder.rotation(degrees);
-  previousBackEncoder = backEncoder.rotation(degrees);
-}
 
 void pre_auton(void) {
   // Initializing Robot Configuration. DO NOT REMOVE!
