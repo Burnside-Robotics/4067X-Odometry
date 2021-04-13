@@ -26,8 +26,6 @@ controller Controller1;
 
 motor lDrive1(PORT1, ratio18_1);
 motor lDrive2(PORT2, ratio18_1);
-motor rDrive1(PORT3, ratio18_1);
-motor rDrive2(PORT4, ratio18_1);
 motor rDrive1(PORT3, ratio18_1, true);
 motor rDrive2(PORT4, ratio18_1, true);
 
