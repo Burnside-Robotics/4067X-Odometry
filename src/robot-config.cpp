@@ -9,7 +9,7 @@ brain  Brain;
 
 // VEXcode device constructors
 encoder lEncoder = encoder(Brain.ThreeWirePort.A);
-encoder rEncoder = encoder(Brain.ThreeWirePort.C);
+encoder rEncoder = encoder(Brain.ThreeWirePort.G);
 encoder backEncoder = encoder(Brain.ThreeWirePort.E);
 
 // VEXcode generated functions

@@ -31,11 +31,11 @@ motor rDrive2(PORT4, ratio18_1, true);
 
 inertial inertialSensor(PORT10);
 
-//In Inches
-const float encoderWheelCircumfrence = 12.5663706144;
+
+const float encoderWheelCircumfrence = 21.9440246847;
 
 //Distance from Tracking Centre to Left and Right Encoder Wheels
-const float encoderTrackRadius = 10;  
+const float encoderTrackRadius = 30;  
 
 //Distance from Tracking Centre to Rear Encoder Wheel
 const float rearEncoderLength = 10;
@@ -55,7 +55,6 @@ int previousBackEncoder = 0;
 int prevRotation = 0; // Rotation of whole robot relative to starting position
 
 
-
 float MOTOR_ACCEL_LIMIT = 10;
 
 int lastl1Speed = 0;
@@ -72,7 +71,21 @@ float toDegrees(float input)
 {
   return input * (180 / 3.1415926535);
 }
-
+void toCartesian(int radius, int theta, int& posX, int& posY)
+{
+  posY = radius * sin(toRadians(theta));
+  posX = radius * cos(toRadians(theta)); 
+}
+void CircleWithLine(int posX, int posY, int radius, int theta)
+{
+  Brain.Screen.clearScreen();
+  Brain.Screen.drawCircle(posX, posY, radius);
+  int lineX = 0;
+  int lineY = 0;
+  theta -= theta * 2;
+  toCartesian(radius, theta, lineX, lineY);
+  Brain.Screen.drawLine(posX, posY, lineX + posX, lineY + posY);
+}
 // Adjusts Input by robot heading such that the robot will always drive forward relative to its starting position unless reset
 void AdjustToRotation(int& forwardAxis, int& lateralAxis)
 {
@@ -84,7 +97,7 @@ void AdjustToRotation(int& forwardAxis, int& lateralAxis)
   int head = inertialSensor.heading();
   if(head > 180)
     head -= 360;
-
+  CircleWithLine(100,100, 40, head);
   //Adjust for Negative Values
   if(lateralAxis < 0)
     theta += 180;
@@ -102,7 +115,7 @@ void AdjustToRotation(int& forwardAxis, int& lateralAxis)
 void DriveWheels(int forwardAxis, int lateralAxis, int rotalAxis)
 {
   //Adjust Input Values
-  AdjustToRotation(forwardAxis, lateralAxis);
+  //AdjustToRotation(forwardAxis, lateralAxis);
 
   //Convert Input Values into Speeds for all 4 Motors
   int l1Speed = forwardAxis + lateralAxis + rotalAxis;
@@ -244,11 +257,15 @@ void HandleDriveInput()
   //Send input to Wheels
   DriveWheels(forwardAxis, lateralAxis, rotalAxis);
 }
+void PrintOdomData()
+{
 
+}
 void usercontrol(void) {
   while (1) {
-    HandleDriveInput();
+    //HandleDriveInput();
     CalculatePosition();
+    PrintOdomData();
     wait(20, msec);
   }
 } 
@@ -296,4 +313,24 @@ int main() {
     Brain.Screen.print(" New Lateral Axis: ");
     Brain.Screen.print(lateralAxis); 
   }  
+
+    Brain.Screen.setCursor(9, 1);
+  Brain.Screen.print("Current Rotation: ");
+  Brain.Screen.print(currentRotation);
+  Brain.Screen.print(" Dist Subtraction: ");
+  Brain.Screen.print((totallDist - totalrDist));
+  Brain.Screen.setCursor(10, 1);
+  Brain.Screen.print(" Track Diameter ");
+  Brain.Screen.print((encoderTrackRadius * 2));
+
+
+  
+  Brain.Screen.clearScreen();
+  Brain.Screen.setCursor(8, 1);  
+  Brain.Screen.print("L Encoder Total: ");
+  Brain.Screen.print(totallDist);
+  Brain.Screen.print(" R Encoder Total: ");
+  Brain.Screen.print(totalrDist);
+  
+
  */
