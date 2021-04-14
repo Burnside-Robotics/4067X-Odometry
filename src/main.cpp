@@ -1,9 +1,9 @@
 /*----------------------------------------------------------------------------*/
 /*                                                                            */
 /*    Module:       main.cpp                                                  */
-/*    Author:       VEX                                                       */
+/*    Author:       Alex Cutforth                                             */
 /*    Created:      Thu Sep 26 2019                                           */
-/*    Description:  Competition Template                                      */
+/*    Description:  X-Drive code for 4067X                                    */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
