@@ -16,6 +16,7 @@
   // ---- END VEXCODE CONFIGURED DEVICES ----
 
   #include "vex.h"
+  #include <iostream>
 
   using namespace vex;
 
@@ -71,7 +72,7 @@
   float offsetRadius = 0;
   float offsetTheta = 0;
 
-  float MOTOR_ACCEL_LIMIT = 10;
+  float MOTOR_ACCEL_LIMIT = 7;
 
   int lastl1Speed = 0;
   int lastl2Speed = 0;
@@ -95,7 +96,8 @@
   void toPolar(float posX, float posY, float& radius, float &theta)
   {
     radius = sqrt(posX * posX + posY * posY);
-    theta = atan(posY / posX);
+    if(posX > 0.01 || posX < -0.01)
+      theta = atan2(posY, posX);
   }
   void CircleWithLine(int posX, int posY, int radius, int theta)
   {
@@ -130,7 +132,7 @@
     lateralAxis = polarRadius * cos(toRadians(theta)); 
   }
 
-  void DriveWheels(int forwardAxis, int lateralAxis, int rotalAxis)
+  void DriveWheels(int forwardAxis, int lateralAxis, int rotalAxis, bool brake)
   {
     //Adjust Input Values
     AdjustToRotation(forwardAxis, lateralAxis);
@@ -165,23 +167,33 @@
     lastr1Speed = r1Speed;
     lastr2Speed = r2Speed;
 
-    //Drive or Brake Wheels
-    if (l1Speed == 0)
-        lDrive1.stop(brakeType::brake);
+    if(brake)
+    {
+      //Drive or Brake Wheels
+      if (l1Speed == 0)
+          lDrive1.stop(brakeType::brake);
+      else
+          lDrive1.spin(directionType::fwd, l1Speed, velocityUnits::pct);
+      if (l2Speed == 0)
+          lDrive2.stop(brakeType::brake);
+      else
+          lDrive2.spin(directionType::fwd, l2Speed, velocityUnits::pct);
+      if (r1Speed == 0)
+          rDrive1.stop(brakeType::brake);
+      else
+          rDrive1.spin(directionType::fwd, r1Speed, velocityUnits::pct);
+      if (r2Speed == 0)
+          rDrive2.stop(brakeType::brake);
+      else
+          rDrive2.spin(directionType::fwd, r2Speed, velocityUnits::pct);
+    }
     else
-        lDrive1.spin(directionType::fwd, l1Speed, velocityUnits::pct);
-    if (l2Speed == 0)
-        lDrive2.stop(brakeType::brake);
-    else
-        lDrive2.spin(directionType::fwd, l2Speed, velocityUnits::pct);
-    if (r1Speed == 0)
-        rDrive1.stop(brakeType::brake);
-    else
-        rDrive1.spin(directionType::fwd, r1Speed, velocityUnits::pct);
-    if (r2Speed == 0)
-        rDrive2.stop(brakeType::brake);
-    else
-        rDrive2.spin(directionType::fwd, r2Speed, velocityUnits::pct);
+    {
+      lDrive1.spin(directionType::fwd, l1Speed, velocityUnits::pct);
+      lDrive2.spin(directionType::fwd, l2Speed, velocityUnits::pct);
+      rDrive1.spin(directionType::fwd, r1Speed, velocityUnits::pct);
+      rDrive2.spin(directionType::fwd, r2Speed, velocityUnits::pct);
+    }
   }
 
 
@@ -223,10 +235,13 @@
     offsetTheta = 0;
     toPolar(localXOffset, localYOffset, offsetRadius, offsetTheta);
     offsetTheta -= averageOrientation;
-  
+
+    localXOffset = (offsetRadius * (float)cos(offsetTheta));
+    localYOffset = (offsetRadius * (float)sin(offsetTheta));
+    
     //Convert Offset Coordinates from Polar to Cartesian and Store as global Coordinates
-    xCoord += (offsetRadius * (float)cos(offsetTheta));
-    yCoord += (offsetRadius * (float)sin(offsetTheta));
+    xCoord += float(offsetRadius * (float)cos(offsetTheta));
+    yCoord += float(offsetRadius * (float)sin(offsetTheta));
 
     //Store Previous Values
     prevRotation = currentRotation;
@@ -275,7 +290,7 @@
     }
     
     //Send input to Wheels
-    DriveWheels(forwardAxis, lateralAxis, rotalAxis);
+    DriveWheels(forwardAxis, lateralAxis, rotalAxis, false);
   }
   void PrintOdomData()
   {
@@ -322,7 +337,7 @@
   }
   void usercontrol(void) {
     while (1) {
-      //HandleDriveInput();
+      HandleDriveInput();
       CalculatePosition();
       PrintOdomData();
       wait(20, msec);
